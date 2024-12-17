@@ -17,12 +17,14 @@ type Maze struct {
     Walls  [][][]bool  // store the presence of walls
 }
 
-func NewDefaultMaze() *Maze {
-	return NewMaze(7, 5)
-}
-
 // NewMaze returns a new maze with specific width and height
 func NewMaze(width, height int) *Maze {
+	if width <= 0 || width > 10 {
+		width = 7
+	}
+	if height <= 0 || height > 10 {
+		height = 5
+	}
 	m := &Maze{
 		Width: width,
 		Height: height,
@@ -38,8 +40,12 @@ func (m *Maze) Resize(width, height int) {
 	for i := 0; i < len(m.Walls); i++ {
 		rows := height + i
 		cols := width + 1 - i;
+		m.Walls[i] = make([][]bool, rows)
 		for j := 0; j < rows; j++ {
-			m.Walls[i] = make([][]bool, cols)
+			m.Walls[i][j] = make([]bool, cols)
+			for k := 0; k < cols; k++ {
+				m.Walls[i][j][k] = true
+			}
 		}
 	}
 	m.backtracking()

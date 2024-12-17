@@ -1,9 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"image/color"
 	"log"
+	"math"
 	"strconv"
 
 	"github.com/ByteArena/box2d"
@@ -42,7 +42,7 @@ func NewMap(width, height int) *Map {
 
 	obstacleBodyDef := box2d.MakeB2BodyDef()
 	obstacleBodyDef.Type = box2d.B2BodyType.B2_staticBody
-	obstacleBodyDef.Position = box2d.MakeB2Vec2(6, 6)
+	obstacleBodyDef.Position = box2d.MakeB2Vec2(37, 37)
 	obstacleBody := world.CreateBody(&obstacleBodyDef)
 
 	obstacleShape := createRectangleShape(obstacleWidth, obstacleHeight)
@@ -95,8 +95,16 @@ func (m *Map) Draw(screen *ebiten.Image) {
 	//vectorvector.DrawFilledRect(screen, 0, 0, float32(obstacleWidth)*ppm*resize, float32(obstacleHeight)*ppm*resize, color.Black, false)
 
 	tankPos := m.TankBody.GetPosition()
-	fmt.Println(tankPos.X, tankPos.Y)
-	vector.DrawFilledRect(screen, float32((tankPos.X-tankWidth/2)*ppm*resize), float32((tankPos.Y-tankHeight/2)*ppm*resize), float32(tankWidth)*ppm*resize, float32(tankHeight)*ppm*resize, color.RGBA{255, 0, 0, 255}, false)
+	angle := m.TankBody.GetAngle()
+	rectImg := ebiten.NewImage(tankWidth*ppm*resize, tankHeight*ppm*resize)
+	rectImg.Fill(color.Black)
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Translate(-tankWidth*ppm*resize/2, -tankHeight*ppm*resize/2)
+	op.GeoM.Rotate(angle)
+	op.GeoM.Translate(((tankPos.X)*ppm*resize), ((tankPos.Y)*ppm*resize))
+	screen.DrawImage(rectImg, op)
+
+	//vector.DrawFilledRect(screen, float32((tankPos.X-tankWidth/2)*ppm*resize), float32((tankPos.Y-tankHeight/2)*ppm*resize), float32(tankWidth)*ppm*resize, float32(tankHeight)*ppm*resize, color.RGBA{255, 0, 0, 255}, false)
 }
 
 func (m *Map) Layout(outsideWidth, outsideHeight int) (int, int) {
@@ -104,25 +112,33 @@ func (m *Map) Layout(outsideWidth, outsideHeight int) (int, int) {
 }
 
 func (m *Map) handleInput() {
+	sign := 0
 	if ebiten.IsKeyPressed(ebiten.KeyArrowUp) {
-		force := box2d.MakeB2Vec2(0, -5)
+		sign |= 1
+		angle := m.TankBody.GetAngle()
+		force := box2d.MakeB2Vec2(math.Sin(angle) * 5, math.Cos(angle) * -5)
 		m.TankBody.SetLinearVelocity(force)
-		fmt.Println("up")
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyArrowDown) {
-		force := box2d.MakeB2Vec2(0, 5)
+		sign |= 2
+		angle := m.TankBody.GetAngle()
+		force := box2d.MakeB2Vec2(math.Sin(angle) * -5, math.Cos(angle) * 5)
 		m.TankBody.SetLinearVelocity(force)
-		fmt.Println("down")
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyArrowLeft) {
-		force := box2d.MakeB2Vec2(-5, 0)
-		m.TankBody.SetLinearVelocity(force)
-		fmt.Println("left")
+		sign |= 4
+		m.TankBody.SetAngularVelocity(-2)
 	}
 	if ebiten.IsKeyPressed(ebiten.KeyArrowRight) {
-		force := box2d.MakeB2Vec2(5, 0)
+		sign |= 8
+		m.TankBody.SetAngularVelocity(2)
+	}
+	if sign & 3 == 0 {
+		force := box2d.MakeB2Vec2(0, 0)
 		m.TankBody.SetLinearVelocity(force)
-		fmt.Println("right")
+	}
+	if sign & 12 == 0 {
+		m.TankBody.SetAngularVelocity(0)
 	}
 }
 

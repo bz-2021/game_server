@@ -1,6 +1,10 @@
 package pg
 
-type Player struct {
-	Name string
-	
+type Player interface {
+	Name() string
+
+}
+
+type WebSocketPlayer struct {
+	name string
 }
